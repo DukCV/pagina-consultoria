@@ -1,0 +1,658 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Paleta oficial del sistema de diseño de Overlayer */
+    --ov-charcoal: #484041;
+    --ov-emerald: #419d78;
+    --ov-indigo: #434371;
+    --ov-lime: #b5f44a;
+    --ov-light-gray: #daddd8;
+
+    /* Tokens internos preservados de la pantalla de bienvenida */
+    --ov-stone: #dadbd5;
+    --ov-stone-light: #e5e6e0;
+    --ov-obsidian: #10121e;
+    --ov-espresso: #483d3b;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100svh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: clip;
+    background-color: var(--ov-light-gray);
+    color: var(--ov-charcoal);
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+/* Textura arquitectónica sutil de piedra caliza / papel de estudio */
+.ov-grain-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+.ov-gpu {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* =========================================================================
+   MOTOR ESPACIAL 3D DEL HERO BANNER (PRESERVE-3D + ILUMINACIÓN DINÁMICA)
+   ========================================================================= */
+.ov-hero-perspective {
+  perspective: 1320px;
+  perspective-origin: 54% 48%;
+}
+
+.ov-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Gimbal maestro con ángulo escultórico base (profundidad perceptible en reposo)
+   + respuesta suave al cursor/tacto mediante variables CSS sin re-renders */
+.ov-scene-gimbal {
+  transform-style: preserve-3d;
+  transform: rotateX(calc(4.5deg + var(--ov-ry, 0) * -8.5deg))
+    rotateY(calc(-8.5deg + var(--ov-rx, 0) * 11.5deg));
+  will-change: transform;
+}
+
+/* Planos espaciales diferenciados con paralaje diferencial coordinado */
+.ov-plane-horizon {
+  transform-style: preserve-3d;
+  transform: translate3d(
+      calc(var(--ov-rx, 0) * -18px),
+      calc(var(--ov-ry, 0) * -12px),
+      -85px
+    )
+    scale(1.06);
+}
+
+.ov-plane-back {
+  transform-style: preserve-3d;
+  transform: translate3d(
+    calc(var(--ov-rx, 0) * -8px),
+    calc(var(--ov-ry, 0) * -6px),
+    -34px
+  );
+}
+
+.ov-plane-mid-base {
+  transform-style: preserve-3d;
+  transform: translate3d(
+    calc(var(--ov-rx, 0) * 6px),
+    calc(var(--ov-ry, 0) * 5px),
+    10px
+  );
+}
+
+.ov-plane-mid {
+  transform-style: preserve-3d;
+  transform: translate3d(
+    calc(var(--ov-rx, 0) * 13px),
+    calc(var(--ov-ry, 0) * 9px),
+    28px
+  );
+}
+
+.ov-plane-front-mid {
+  transform-style: preserve-3d;
+  transform: translate3d(
+    calc(var(--ov-rx, 0) * 22px),
+    calc(var(--ov-ry, 0) * 15px),
+    54px
+  );
+}
+
+.ov-plane-front {
+  transform-style: preserve-3d;
+  transform: translate3d(
+    calc(var(--ov-rx, 0) * 32px),
+    calc(var(--ov-ry, 0) * 21px),
+    78px
+  );
+}
+
+/* Reflejo especular controlado sobre superficies de cristal y dispositivos */
+.ov-specular-glare {
+  background: radial-gradient(
+    420px circle at var(--ov-spot-x, 48%) var(--ov-spot-y, 36%),
+    rgba(218, 221, 216, 0.19) 0%,
+    rgba(65, 157, 120, 0.09) 40%,
+    rgba(67, 67, 113, 0) 74%
+  );
+}
+
+@keyframes ov-float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes ov-float-counter {
+  0%,
+  100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, 7px, 0);
+  }
+}
+
+@keyframes ov-dash-flow {
+  from {
+    stroke-dashoffset: 140;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ov-pulse-ring {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.04);
+  }
+}
+
+.ov-anim-float {
+  animation: ov-float-slow 5.8s ease-in-out infinite;
+}
+
+.ov-anim-float-alt {
+  animation: ov-float-counter 6.6s ease-in-out infinite;
+}
+
+.ov-anim-flow {
+  stroke-dasharray: 12 22;
+  animation: ov-dash-flow 3s linear infinite;
+}
+
+.ov-anim-flow-fast {
+  stroke-dasharray: 10 26;
+  animation: ov-dash-flow 1.95s linear infinite;
+}
+
+.ov-anim-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ov-pulse-ring 3.4s ease-in-out infinite;
+}
+
+/* Engranajes tecnológicos engranados: relación de dientes 16:10 → periodos 32s / 20s */
+@keyframes ov-gear-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ov-anim-gear-cw,
+.ov-anim-gear-ccw {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ov-gear-spin 32s linear infinite;
+}
+
+.ov-anim-gear-ccw {
+  animation-duration: 20s;
+  animation-direction: reverse;
+}
+
+@keyframes ov-ai-pod-cycle {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  35%,
+  65% {
+    opacity: 1;
+    transform: translate3d(0, -4px, 0) scale(1.02);
+  }
+}
+
+.ov-ai-cycle-1 {
+  animation: ov-ai-pod-cycle 4.2s ease-in-out 0s infinite;
+}
+
+.ov-ai-cycle-2 {
+  animation: ov-ai-pod-cycle 4.2s ease-in-out 1.4s infinite;
+}
+
+.ov-ai-cycle-3 {
+  animation: ov-ai-pod-cycle 4.2s ease-in-out 2.8s infinite;
+}
+
+/* Transición espacial 3D de profundidad entre escenas tecnológicas */
+@keyframes ov-scene-enter-next {
+  from {
+    opacity: 0;
+    transform: translate3d(14%, 14px, -165px) rotateY(-22deg) scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0%, 0px, 0px) rotateY(0deg) scale(1);
+  }
+}
+
+@keyframes ov-scene-exit-next {
+  from {
+    opacity: 1;
+    transform: translate3d(0%, 0px, 0px) rotateY(0deg) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-15%, -10px, 85px) rotateY(18deg) scale(1.08);
+  }
+}
+
+@keyframes ov-scene-enter-prev {
+  from {
+    opacity: 0;
+    transform: translate3d(-14%, 14px, -165px) rotateY(22deg) scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0%, 0px, 0px) rotateY(0deg) scale(1);
+  }
+}
+
+@keyframes ov-scene-exit-prev {
+  from {
+    opacity: 1;
+    transform: translate3d(0%, 0px, 0px) rotateY(0deg) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(15%, -10px, 85px) rotateY(-18deg) scale(1.08);
+  }
+}
+
+@keyframes ov-specialty-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.ov-scene-enter-next {
+  animation: ov-scene-enter-next 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ov-scene-exit-next {
+  animation: ov-scene-exit-next 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ov-scene-enter-prev {
+  animation: ov-scene-enter-prev 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ov-scene-exit-prev {
+  animation: ov-scene-exit-prev 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ov-specialty-reveal {
+  animation: ov-specialty-enter 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* =========================================================================
+   BOTONES DE ACCIÓN DEL HERO  (Saber más · Contáctanos)
+   Principal en verde lima #B5F44A con icono carbón #484041; secundario de cristal índigo #434371
+   con borde degradado. El halo toma el color de cada escena de --ov-cta-glow (lo fija cada servicio).
+   ========================================================================= */
+.ov-cta {
+  --ov-cta-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 380ms var(--ov-cta-ease),
+    box-shadow 380ms var(--ov-cta-ease),
+    background-position 700ms var(--ov-cta-ease),
+    color 240ms ease;
+}
+
+.ov-cta:focus-visible {
+  outline: 2px solid var(--ov-lime);
+  outline-offset: 4px;
+}
+
+/* --- Principal: verde lima con relieve, destello y flecha que gira a ↗ ------------------- */
+.ov-cta--primary {
+  padding: 0 0.3rem 0 1rem;
+  color: var(--ov-charcoal);
+  background: linear-gradient(180deg, #c8fa72 0%, var(--ov-lime) 52%, #a4e53c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 0 rgba(72, 64, 65, 0.12),
+    0 0 0 1px rgba(181, 244, 74, 0.55),
+    0 14px 30px -12px rgba(181, 244, 74, 0.6),
+    0 8px 18px -8px rgba(16, 13, 14, 0.65);
+}
+
+.ov-cta--primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 0 rgba(72, 64, 65, 0.12),
+    0 0 0 1px rgba(181, 244, 74, 0.8),
+    0 20px 38px -12px rgba(181, 244, 74, 0.75),
+    0 10px 22px -8px rgba(16, 13, 14, 0.7);
+}
+
+.ov-cta__icon {
+  display: grid;
+  place-items: center;
+  height: calc(100% - 0.6rem);
+  aspect-ratio: 1 / 1;
+  border-radius: 9999px;
+  background: var(--ov-charcoal);
+  color: var(--ov-lime);
+  transition:
+    transform 380ms var(--ov-cta-ease),
+    background-color 260ms ease;
+}
+
+.ov-cta--primary:hover .ov-cta__icon {
+  background: var(--ov-indigo);
+  transform: translateX(1px);
+}
+
+.ov-cta__arrow {
+  transition: transform 380ms var(--ov-cta-ease);
+}
+
+.ov-cta--primary:hover .ov-cta__arrow {
+  transform: rotate(-45deg);
+}
+
+/* Destello diagonal: al pasar el cursor y, una vez, cada vez que cambia de servicio */
+.ov-cta__sheen {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  width: 42%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+  transform: translateX(-130%) skewX(-18deg);
+  transition: transform 800ms var(--ov-cta-ease);
+}
+
+.ov-cta--primary:hover .ov-cta__sheen {
+  transform: translateX(380%) skewX(-18deg);
+}
+
+@keyframes ov-cta-sheen-sweep {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(380%) skewX(-18deg);
+  }
+}
+
+/* `backwards` (no `both`): al terminar vuelve al estado base y el destello de hover sigue funcionando */
+.ov-cta__sheen--auto {
+  animation: ov-cta-sheen-sweep 1000ms var(--ov-cta-ease) 420ms 1 backwards;
+}
+
+/* Halo del color de la escena detrás del botón principal */
+.ov-cta-wrap {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+}
+
+.ov-cta-halo {
+  pointer-events: none;
+  position: absolute;
+  inset: -0.35rem;
+  z-index: -1;
+  border-radius: 9999px;
+  opacity: 0.55;
+  transition: opacity 380ms ease;
+}
+
+.ov-cta-wrap:hover .ov-cta-halo {
+  opacity: 0.95;
+}
+
+.ov-cta-halo__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, var(--ov-cta-glow, var(--ov-emerald)), var(--ov-lime));
+  filter: blur(18px);
+}
+
+/* --- Secundario: cristal índigo/carbón con borde degradado que se desplaza al pasar el cursor -- */
+.ov-cta--ghost {
+  padding: 0 1rem;
+  color: var(--ov-light-gray);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(135deg, rgba(67, 67, 113, 0.68) 0%, rgba(72, 64, 65, 0.62) 100%) padding-box,
+    linear-gradient(
+        115deg,
+        rgba(218, 221, 216, 0.7) 0%,
+        var(--ov-emerald) 28%,
+        var(--ov-indigo) 56%,
+        var(--ov-emerald) 78%,
+        var(--ov-lime) 100%
+      )
+      border-box;
+  background-size: 100% 100%, 260% 100%;
+  background-position: 0 0, 0% 0;
+  box-shadow:
+    inset 0 1px 0 rgba(218, 221, 216, 0.18),
+    0 12px 26px -14px rgba(16, 13, 14, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.ov-cta--ghost:hover {
+  transform: translateY(-2px);
+  background-position: 0 0, 100% 0;
+  box-shadow:
+    inset 0 1px 0 rgba(218, 221, 216, 0.28),
+    0 16px 30px -14px rgba(65, 157, 120, 0.55);
+}
+
+.ov-cta--ghost .ov-cta__arrow {
+  color: var(--ov-emerald);
+}
+
+.ov-cta--ghost:hover .ov-cta__arrow {
+  color: var(--ov-lime);
+  transform: translateX(3px);
+}
+
+.ov-cta__diamond {
+  display: none;
+  flex: none;
+  width: 0.375rem;
+  height: 0.375rem;
+  background: var(--ov-lime);
+  transform: rotate(45deg);
+  transition: transform 380ms var(--ov-cta-ease);
+}
+
+.ov-cta--ghost:hover .ov-cta__diamond {
+  transform: rotate(225deg) scale(1.3);
+}
+
+/* Pulsación: va al final para prevalecer sobre :hover */
+.ov-cta:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 120ms;
+}
+
+@media (min-width: 640px) {
+  .ov-cta {
+    gap: 0.7rem;
+    height: 3rem;
+    font-size: 0.9375rem;
+  }
+
+  .ov-cta--primary {
+    padding-left: 1.4rem;
+  }
+
+  .ov-cta--ghost {
+    padding: 0 1.35rem;
+  }
+
+  .ov-cta__diamond {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ov-cta {
+    height: 3.25rem;
+    font-size: 1rem;
+  }
+}
+
+/* Sin movimiento reducido no hay desplazamientos: los cambios de estado son instantáneos */
+@media (prefers-reduced-motion: reduce) {
+  .ov-cta,
+  .ov-cta *,
+  .ov-cta-halo {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================================
+   NIVELES DE CALIDAD GRÁFICA  (atributo data-ov-quality en .ov-hero)
+   full: todo activo · balanced: sin efectos costosos · static: plano, sin modelos 3D.
+   El nivel lo decide useGraphicsGovernor según las capacidades y el rendimiento medido.
+   ========================================================================= */
+
+/* Fundido sencillo que sustituye a la transición espacial 3D en el nivel static */
+@keyframes ov-scene-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ov-scene-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Reasentamiento breve al pasar a static: enmascara el aplanado de las capas 3D en un cambio a mitad de sesión */
+@keyframes ov-quality-settle {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ov-hero[data-ov-quality='static'] .ov-hero-perspective {
+  animation: ov-quality-settle 380ms ease-out both;
+}
+
+/* balanced y static: se eliminan los filtros más caros (desenfoque de fondo y sombras proyectadas) */
+.ov-hero:not([data-ov-quality='full'])
+  :is([class*='backdrop-blur'], [class*='drop-shadow'], .ov-cta--ghost) {
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* balanced y static: las animaciones de trazos y engranajes SVG obligan a repintar en cada fotograma */
+.ov-hero:not([data-ov-quality='full'])
+  :is(.ov-anim-flow, .ov-anim-flow-fast, .ov-anim-pulse, .ov-anim-gear-cw, .ov-anim-gear-ccw) {
+  animation: none !important;
+}
+
+/* static: sin perspectiva ni capas 3D; las escenas quedan como composiciones planas */
+.ov-hero[data-ov-quality='static']
+  :is(
+    .ov-hero-perspective,
+    .ov-scene-gimbal,
+    .ov-preserve-3d,
+    .ov-plane-horizon,
+    .ov-plane-back,
+    .ov-plane-mid-base,
+    .ov-plane-mid,
+    .ov-plane-front-mid,
+    .ov-plane-front
+  ) {
+  perspective: none;
+  transform-style: flat;
+}
+
+.ov-hero[data-ov-quality='static']
+  :is(
+    .ov-scene-gimbal,
+    .ov-plane-horizon,
+    .ov-plane-back,
+    .ov-plane-mid-base,
+    .ov-plane-mid,
+    .ov-plane-front-mid,
+    .ov-plane-front
+  ) {
+  transform: none !important;
+  will-change: auto;
+}
+
+.ov-hero[data-ov-quality='static'] :is(.ov-scene-enter-next, .ov-scene-enter-prev) {
+  animation: ov-scene-fade-in 320ms ease-out both;
+}
+
+.ov-hero[data-ov-quality='static'] :is(.ov-scene-exit-next, .ov-scene-exit-prev) {
+  animation: ov-scene-fade-out 260ms ease-in both;
+}
+
+/* static: se conservan las flotaciones sobre elementos HTML (baratas) pero no las internas de un SVG */
+.ov-hero[data-ov-quality='static'] svg :is(.ov-anim-float, .ov-anim-float-alt) {
+  animation: none !important;
+}
+
+/* prefers-reduced-motion: sin ninguna animación ni transformación de profundidad */
+.ov-hero[data-ov-quality-reason='reduced-motion'] *,
+.ov-hero[data-ov-quality-reason='reduced-motion'] *::before,
+.ov-hero[data-ov-quality-reason='reduced-motion'] *::after {
+  animation: none !important;
+}
