@@ -28,6 +28,24 @@
 4. Override de QA: `?ov-quality=full|balanced|static` (fija nivel) o `adaptive` (arranca en `full` y mantiene la adaptación).
 5. `GRAPHICS_LEVELS` define `models3d`, `maxDpr`, `coarseMaxDpr`, `resolutionScale`; el CSS reacciona a `data-ov-quality`.
 
-## Límites conocidos del estado actual
-- El header es `relative z-40` (no sticky) y su altura es 76/82/86 px; las secciones destino aún no existen.
-- El proveedor de calidad cuelga de `HeroBanner`; el header y futuras secciones no lo comparten (si hace falta, súbelo a `App`).
+## Motor 3D ampliado para escenas compuestas
+`createWebGLPbrStage(canvas, asset, {preset, poses, ...})` admite además `preset: 'scene'` (sin giro por puntero, cámara explícita) y `poses: ['quest3','ai-character']` para animar nodos por nombre en un asset fusionado. Opciones **opcionales** (el hero no las usa y sus renders no cambian: comprobado con hashes de 4 renders):
+- `renderFrame({camera:{eye,target,fovDeg}, fog:{color,near,far}})`, `setNodeTransform(s)`, `project(punto)`, emisivo plano, pasada de mezcla (`alphaMode:'BLEND'`, `extras.additive`) ordenada de atrás hacia delante.
+- Mezcla alfa, doble cara y emisivo plano siguen la semántica glTF en todos los presets. Los 7 materiales de los GLB del hero no los usan (comprobado en el navegador) y sus renders son idénticos por hash; un GLB nuevo que sí los use se verá con esa semántica.
+- `primitives.js` (caja, esfera, cilindro, toro, tubo, engranaje, plano, `mergeGeometries`) y `sceneAsset.js` (`buildSceneAsset`, `mergeAssets`, `overrideMaterials`) crean y combinan assets sin tocar el GLB cacheado.
+
+## Sección de Servicios (`components/services/`)
+Pantalla fijada (sticky) bajo el hero con una doble hélice 3D real que gira con el scroll.
+- `ServicesSection` (carcasa + `Suspense` + esqueleto de igual altura; `data-mode`, `data-ov-quality`) → `ServicesHelix` (lazy: texto, navegación, etiquetas).
+- `helix3d/helixRig.js` (puro): hilos, un cuarto de vuelta por servicio, cámara, mesetas (`displayProgress`), scroll↔progreso. `helix3d/useHelixController.js`: **único** oyente de scroll, progreso suavizado en rAF solo mientras algo se mueve.
+- `helix3d/useHelixRenderer.js`: ciclo de vida del stage (`loading-3d` → `ready-3d` | `fallback-2d`), pausa fuera de vista, DPR por nivel con presupuesto de píxeles, `webglcontextlost` → 2D. El 3D solo existe con la sección cerca (`useNearViewport`): se libera a los 6 s de alejarse.
+- `helix3d/buildHelixScene.js` + `objects/*` (estructura, 6 objetos, anillos lima, texturas de canvas) + `sceneRuntime.js` (transformaciones por fotograma, cámara, etiquetas DOM). Quest 3 e IA son los GLB del hero, fusionados.
+- Alternativa 2D: `HelixFrames` + `frameSequence.js` (fotogramas de la misma escena, `tools/render-helix-frames.mjs`); también sirve de vista previa mientras el 3D carga. La posición del eje 3D la fija el CSS (`--ov-axis-x`).
+- Modo manual (`data-mode="manual"`): movimiento reducido o altura < 600 px; sin sticky ni scroll vinculado.
+
+## Estado compartido
+`GraphicsQualityProvider` (en `App`) da el mismo nivel de calidad al header, al hero y a la sección; el header es `sticky` (translúcido al hacer scroll) y `--ov-header-h` (76/82/86 px) fija la altura que respetan anclas y pantalla fijada. «Saber más» del hero enfoca el servicio vía `utils/serviceFocus.js`.
+
+## Límites conocidos
+- Las secciones `#sectores`, `#nosotros` y `#contactanos` aún no existen (`followSectionLink`).
+- El render por software (SwiftShader) hace el 3D inviable en pruebas automáticas salvo con `?ov-quality=full` y esperas largas.

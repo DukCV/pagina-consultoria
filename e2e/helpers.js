@@ -3,7 +3,7 @@ const IGNORED_CONSOLE_URLS = /fonts\.(googleapis|gstatic)\.com/
 
 /**
  * Abre el sitio con un nivel de calidad fijo y espera a que termine la pantalla de bienvenida
- * (`<main>` deja de ser `inert`). Devuelve la lista viva de errores de consola y de página.
+ * (`<main>` deja de ser `inert` y el scroll vuelve a estar disponible). Devuelve la lista viva de errores de consola y de página.
  *
  * @param {import('@playwright/test').Page} page
  * @param {{ quality?: 'static' | 'balanced' | 'full' | 'adaptive', path?: string }} [options]
@@ -18,10 +18,11 @@ export async function openSite(page, { quality = 'static', path = '/' } = {}) {
   page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
 
   await page.goto(`${path}?ov-quality=${quality}`)
+  // Termina la secuencia de bienvenida: `main` deja de ser inert y el `body` recupera el scroll
   await page.waitForFunction(
     () => {
       const main = document.querySelector('main')
-      return Boolean(main) && !main.hasAttribute('inert')
+      return Boolean(main) && !main.hasAttribute('inert') && getComputedStyle(document.body).overflow !== 'hidden'
     },
     null,
     { timeout: 30_000 },

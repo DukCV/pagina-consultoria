@@ -10,6 +10,7 @@ Sitio de una sola página (React 19 + Vite 8 + Tailwind v4, sin backend). Flujo 
 
 ## Mapa
 - `src/App.jsx` secuencia bienvenida→header→`main` · `src/components/hero/` hero (escenas lazy en `scenes/`)
+- `src/components/services/` sección de Servicios: hélice 3D (`helix3d/`), UI y fotogramas 2D
 - `src/engine3d/` WebGL2 PBR, GLB, capacidades y monitor de fps · `src/hooks/` lógica reutilizable
 - `src/context/graphicsQuality.js` niveles `full | balanced | static` · `src/constants/` contenido y datos
 - `src/index.css` tokens y clases `ov-*` · `tools/` scripts de modelos · `public/models/` GLB y renders 2D

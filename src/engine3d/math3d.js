@@ -154,3 +154,100 @@ export function quatFromEulerXYZ(out, rx, ry, rz) {
   out[3] = cx * cy * cz - sx * sy * sz
   return out
 }
+
+/** Normaliza un cuaternión (evita matrices sesgadas si el llamador pasa uno aproximado). */
+export function quatNormalize(out, q) {
+  const len = Math.hypot(q[0], q[1], q[2], q[3])
+  if (len < 1e-12) {
+    out[0] = 0
+    out[1] = 0
+    out[2] = 0
+    out[3] = 1
+    return out
+  }
+  const inv = 1 / len
+  out[0] = q[0] * inv
+  out[1] = q[1] * inv
+  out[2] = q[2] * inv
+  out[3] = q[3] * inv
+  return out
+}
+
+/** Transforma un punto (w = 1) por una matriz 4×4 afín en orden de columnas. */
+export function mat4TransformPoint(out, m, p) {
+  const x = p[0], y = p[1], z = p[2]
+  out[0] = m[0] * x + m[4] * y + m[8] * z + m[12]
+  out[1] = m[1] * x + m[5] * y + m[9] * z + m[13]
+  out[2] = m[2] * x + m[6] * y + m[10] * z + m[14]
+  return out
+}
+
+/**
+ * Matriz de normales (3×3 en orden de columnas) = inversa traspuesta de la parte lineal de `m`.
+ * Con escala no uniforme `mat3(m)` deformaría las normales; aquí se usa la matriz de cofactores
+ * dividida por el determinante, que no requiere invertir. Devuelve null si la matriz es singular.
+ */
+export function mat3NormalFromMat4(out, m) {
+  const c0x = m[5] * m[10] - m[6] * m[9]
+  const c0y = m[6] * m[8] - m[4] * m[10]
+  const c0z = m[4] * m[9] - m[5] * m[8]
+  const det = m[0] * c0x + m[1] * c0y + m[2] * c0z
+  if (Math.abs(det) < 1e-18) return null
+  const inv = 1 / det
+  out[0] = c0x * inv
+  out[1] = c0y * inv
+  out[2] = c0z * inv
+  out[3] = (m[9] * m[2] - m[10] * m[1]) * inv
+  out[4] = (m[10] * m[0] - m[8] * m[2]) * inv
+  out[5] = (m[8] * m[1] - m[9] * m[0]) * inv
+  out[6] = (m[1] * m[6] - m[2] * m[5]) * inv
+  out[7] = (m[2] * m[4] - m[0] * m[6]) * inv
+  out[8] = (m[0] * m[5] - m[1] * m[4]) * inv
+  return out
+}
+
+/** Determinante de la parte lineal 3×3 de una matriz 4×4 (negativo ⇒ la transformación refleja). */
+export function mat4Determinant3(m) {
+  return (
+    m[0] * (m[5] * m[10] - m[6] * m[9]) +
+    m[1] * (m[6] * m[8] - m[4] * m[10]) +
+    m[2] * (m[4] * m[9] - m[5] * m[8])
+  )
+}
+
+export function vec3Sub(out, a, b) {
+  out[0] = a[0] - b[0]
+  out[1] = a[1] - b[1]
+  out[2] = a[2] - b[2]
+  return out
+}
+
+export function vec3Dot(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+export function vec3Cross(out, a, b) {
+  const x = a[1] * b[2] - a[2] * b[1]
+  const y = a[2] * b[0] - a[0] * b[2]
+  const z = a[0] * b[1] - a[1] * b[0]
+  out[0] = x
+  out[1] = y
+  out[2] = z
+  return out
+}
+
+/** Normaliza; un vector casi nulo queda en cero (en vez de producir NaN). */
+export function vec3Normalize(out, a) {
+  const len = Math.hypot(a[0], a[1], a[2])
+  if (len < 1e-12) {
+    out[0] = 0
+    out[1] = 0
+    out[2] = 0
+    return out
+  }
+  const inv = 1 / len
+  out[0] = a[0] * inv
+  out[1] = a[1] * inv
+  out[2] = a[2] * inv
+  return out
+}

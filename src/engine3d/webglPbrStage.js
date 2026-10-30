@@ -1,16 +1,18 @@
 import {
-  mat4Copy,
   mat4Create,
   mat4FromTRS,
-  mat4Identity,
   mat4LookAt,
   mat4Multiply,
   mat4Perspective,
+  mat4TransformPoint,
   quatFromEulerXYZ,
   quatMultiply,
+  quatNormalize,
 } from './math3d'
 
 const MAX_JOINTS = 32
+// Poses por nombre de nodo que `applyPoseAnimations` sabe aplicar (opción `poses` del stage)
+const POSE_KINDS = ['quest3', 'ai-character']
 
 const VERTEX_SHADER_SRC = `#version 300 es
 precision highp float;
@@ -25,6 +27,8 @@ uniform mat4 u_viewProj;
 uniform mat4 u_model;
 uniform bool u_hasSkin;
 uniform mat4 u_joints[${MAX_JOINTS}];
+// Solo el preset 'scene': con escala no uniforme mat3(worldMat) deforma las normales
+uniform bool u_exactNormals;
 
 out vec3 v_worldPos;
 out vec3 v_normal;
@@ -49,7 +53,13 @@ void main() {
 
   vec4 wp = worldMat * vec4(a_position, 1.0);
   v_worldPos = wp.xyz;
-  v_normal = normalize(mat3(worldMat) * a_normal);
+  if (u_exactNormals) {
+    // Inversa traspuesta por cofactores (columnas = productos cruzados de las otras dos)
+    mat3 m = mat3(worldMat);
+    v_normal = normalize(mat3(cross(m[1], m[2]), cross(m[2], m[0]), cross(m[0], m[1])) * a_normal);
+  } else {
+    v_normal = normalize(mat3(worldMat) * a_normal);
+  }
   v_uv = a_uv;
   gl_Position = u_viewProj * wp;
 }
@@ -72,6 +82,11 @@ uniform float u_occlusionStrength;
 uniform bool u_hasBaseColorTex;
 uniform bool u_hasMrTex;
 uniform bool u_hasEmissiveTex;
+
+// Niebla lineal en espacio sRGB (solo si el llamador pasa «fog» a renderFrame)
+uniform bool u_fogOn;
+uniform vec3 u_fogColor;
+uniform vec2 u_fogRange;
 
 uniform sampler2D u_baseColorTex;
 uniform sampler2D u_mrTex;
@@ -208,11 +223,23 @@ void main() {
   vec3 emissive = vec3(0.0);
   if (u_hasEmissiveTex) {
     emissive = srgbToLinear(texture(u_emissiveTex, v_uv).rgb) * u_emissiveFactor * 1.45;
+  } else {
+    // Emisivo plano (sin textura): misma intensidad que con textura
+    emissive = u_emissiveFactor * 1.45;
   }
 
   vec3 color = (diffuseAmb + specAmb) * ao + Lo + emissive;
   color = acesToneMap(color);
   color = linearToSrgb(color);
+
+  if (u_fogOn) {
+    float fogAmount = clamp(
+      (length(u_camPos - v_worldPos) - u_fogRange.x) / max(u_fogRange.y - u_fogRange.x, 0.0001),
+      0.0,
+      1.0
+    );
+    color = mix(color, u_fogColor, fogAmount);
+  }
 
   float alpha = clamp(baseColor.a, 0.0, 1.0);
   outColor = vec4(color * alpha, alpha);
@@ -271,10 +298,24 @@ const UNIFORM_NAMES = {
   baseColorTex: 'u_baseColorTex',
   mrTex: 'u_mrTex',
   emissiveTex: 'u_emissiveTex',
+  exactNormals: 'u_exactNormals',
+  fogOn: 'u_fogOn',
+  fogColor: 'u_fogColor',
+  fogRange: 'u_fogRange',
+}
+
+/** Centro de la caja delimitadora (min/max del accesor POSITION) para ordenar la pasada translúcida. */
+function localBoundsCenter(positionAccessor) {
+  const { min, max } = positionAccessor ?? {}
+  if (!min || !max) return new Float32Array(3)
+  return new Float32Array([(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2])
 }
 
 const DEFAULT_BASE_COLOR = [1, 1, 1, 1]
 const DEFAULT_EMISSIVE = [0, 0, 0]
+const IDENTITY_MATRIX = mat4Create()
+// La niebla aditiva se desvanece hacia negro: sumar el color de la niebla iluminaría el fondo
+const BLACK = new Float32Array(3)
 
 /**
  * Instancia aislada de escena WebGL2 para renderizar modelos glTF 2.0 PBR
@@ -282,9 +323,22 @@ const DEFAULT_EMISSIVE = [0, 0, 0]
  *
  * La compilación del shader es asíncrona: hay que esperar a que `pollReady()` devuelva true
  * antes de llamar a `renderFrame()` (que, hasta entonces, no hace nada).
+ *
+ * Opciones:
+ * - `preset`: 'quest3' | 'ai-character' (visores del hero: cámara, giro con el puntero y pose propios)
+ *   o 'scene' (escena compuesta: sin giro por puntero, cámara explícita en `renderFrame`, normales
+ *   exactas con escala no uniforme).
+ * - `poses`: presets cuyas poses por nombre de nodo se aplican (por defecto, solo el del `preset`).
+ *   Permite animar a la vez un Quest 3 y el personaje en un mismo asset fusionado.
  */
 export function createWebGLPbrStage(canvas, asset, options = {}) {
-  const { preset = 'quest3', preserveDrawingBuffer = false, antialias = true } = options
+  const { preset = 'quest3', preserveDrawingBuffer = false, antialias = true, poses } = options
+  const isScene = preset === 'scene'
+  const poseKinds = poses ?? (POSE_KINDS.includes(preset) ? [preset] : [])
+  const unknownPose = poseKinds.find((kind) => !POSE_KINDS.includes(kind))
+  if (unknownPose !== undefined) {
+    throw new Error(`Pose desconocida «${unknownPose}» (disponibles: ${POSE_KINDS.join(', ')})`)
+  }
 
   const gl = canvas.getContext('webgl2', {
     alpha: true,
@@ -337,6 +391,7 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     gl.uniform1i(uniforms.baseColorTex, 0)
     gl.uniform1i(uniforms.mrTex, 1)
     gl.uniform1i(uniforms.emissiveTex, 2)
+    if (isScene) gl.uniform1i(uniforms.exactNormals, 1)
 
     isReady = true
     return true
@@ -366,6 +421,7 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
   const textureOrNull = (textureInfo) => glTextures[textureInfo?.index] ?? null
   const compiledMaterials = (gltf.materials || []).map((matDef) => {
     const pbr = matDef.pbrMetallicRoughness || {}
+    const blend = matDef.alphaMode === 'BLEND'
     return {
       baseColorFactor: pbr.baseColorFactor || DEFAULT_BASE_COLOR,
       metallicFactor: pbr.metallicFactor ?? 0.0,
@@ -375,6 +431,9 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
       baseColorTexture: textureOrNull(pbr.baseColorTexture),
       metallicRoughnessTexture: textureOrNull(pbr.metallicRoughnessTexture),
       emissiveTexture: textureOrNull(matDef.emissiveTexture),
+      blend,
+      additive: blend && matDef.extras?.additive === true,
+      doubleSided: matDef.doubleSided === true,
     }
   })
   const fallbackMaterial = {
@@ -386,6 +445,9 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     baseColorTexture: null,
     metallicRoughnessTexture: null,
     emissiveTexture: null,
+    blend: false,
+    additive: false,
+    doubleSided: false,
   }
 
   // Subir bufferViews de geometría bajo demanda
@@ -450,6 +512,7 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
         indexType: idxAcc.componentType,
         indexOffset: idxAcc.byteOffset || 0,
         materialIdx: prim.material ?? 0,
+        center: localBoundsCenter(gltf.accessors[prim.attributes.POSITION]),
       }
     })
     return prims
@@ -511,18 +574,33 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     preset === 'ai-character'
       ? {
           fovDeg: 30,
+          near: 0.04,
+          far: 24.0,
           eye: new Float32Array([0.04, 1.16, 4.95]),
           target: new Float32Array([0.0, 1.11, 0.0]),
           baseYaw: -0.16,
           basePitch: 0.03,
         }
-      : {
-          fovDeg: 30,
-          eye: new Float32Array([0.0, 0.015, 0.64]),
-          target: new Float32Array([0.0, -0.012, 0.0]),
-          baseYaw: -0.31,
-          basePitch: 0.09,
-        }
+      : isScene
+        ? {
+            // Cámara por defecto de una escena compuesta; lo normal es pasar `camera` en cada fotograma
+            fovDeg: 40,
+            near: 0.1,
+            far: 100.0,
+            eye: new Float32Array([0.0, 1.5, 9.0]),
+            target: new Float32Array([0.0, 0.0, 0.0]),
+            baseYaw: 0,
+            basePitch: 0,
+          }
+        : {
+            fovDeg: 30,
+            near: 0.04,
+            far: 24.0,
+            eye: new Float32Array([0.0, 0.015, 0.64]),
+            target: new Float32Array([0.0, -0.012, 0.0]),
+            baseYaw: -0.31,
+            basePitch: 0.09,
+          }
 
   const upVec = new Float32Array([0, 1, 0])
   let disposed = false
@@ -543,7 +621,7 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
       baseNodes[i].curR.set(baseNodes[i].baseR)
     }
 
-    if (preset === 'quest3') {
+    if (poseKinds.includes('quest3')) {
       const hsIdx = nodeIdxByName.get('Quest3_Headset')
       const crIdx = nodeIdxByName.get('Quest3_ControllerRight')
       const clIdx = nodeIdxByName.get('Quest3_ControllerLeft')
@@ -575,7 +653,9 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
         quatFromEulerXYZ(tmpQuat, Math.sin(timeSec * 1.35) * 0.045, rx * 0.09, -0.03 * Math.cos(timeSec * 1.2))
         quatMultiply(cl.curR, cl.baseR, tmpQuat)
       }
-    } else if (preset === 'ai-character') {
+    }
+
+    if (poseKinds.includes('ai-character')) {
       const hipsIdx = nodeIdxByName.get('hips')
       const chestIdx = nodeIdxByName.get('chest')
       const headIdx = nodeIdxByName.get('head')
@@ -619,11 +699,153 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     }
   }
 
+  // Lista plana de primitivas a dibujar, en orden de nodo y de primitiva (el mismo que el recorrido
+  // directo de la jerarquía). Las translúcidas se separan para la segunda pasada.
+  const drawItems = []
+  baseNodes.forEach((node, nodeIdx) => {
+    if (node.mesh === undefined) return
+    const skin = node.skin !== undefined ? compiledSkins[node.skin] : undefined
+    for (const prim of compiledMeshes[node.mesh]) {
+      drawItems.push({
+        nodeIdx,
+        prim,
+        skin,
+        material: compiledMaterials[prim.materialIdx] ?? fallbackMaterial,
+        distSq: 0,
+      })
+    }
+  })
+  const opaqueItems = drawItems.filter((item) => !item.material.blend)
+  const blendItems = drawItems.filter((item) => item.material.blend)
+
+  // Último nodo/material enlazado: evita repetir los mismos uniformes entre primitivas consecutivas
+  let boundNodeIdx = -1
+  let boundMaterial = null
+  // Niebla del fotograma en curso (se sube a la GPU junto con cada material)
+  let fogActive = false
+  let fogColor = BLACK
+  let fogUniformOn = false
+
+  // Estado de la última llamada a renderFrame, usado por project()
+  const centerWorld = new Float32Array(3)
+  let viewCssW = 1
+  let viewCssH = 1
+  let hasRendered = false
+
+  function bindNode(item) {
+    boundNodeIdx = item.nodeIdx
+    gl.uniform1i(uniforms.hasSkin, item.skin ? 1 : 0)
+    if (item.skin) {
+      // En glTF 2.0, las jointMatrices ya incorporan la transformación mundial del esqueleto
+      gl.uniformMatrix4fv(uniforms.model, false, IDENTITY_MATRIX)
+      gl.uniformMatrix4fv(uniforms.joints, false, item.skin.uniformArray)
+    } else {
+      gl.uniformMatrix4fv(uniforms.model, false, baseNodes[item.nodeIdx].worldMat)
+    }
+  }
+
+  function bindMaterial(material) {
+    boundMaterial = material
+    const bcf = material.baseColorFactor
+    gl.uniform4f(uniforms.baseColorFactor, bcf[0], bcf[1], bcf[2], bcf[3])
+    gl.uniform1f(uniforms.metallicFactor, material.metallicFactor)
+    gl.uniform1f(uniforms.roughnessFactor, material.roughnessFactor)
+
+    const emf = material.emissiveFactor
+    gl.uniform3f(uniforms.emissiveFactor, emf[0], emf[1], emf[2])
+    gl.uniform1f(uniforms.occlusionStrength, material.occlusionStrength)
+
+    if (material.baseColorTexture) {
+      gl.uniform1i(uniforms.hasBaseColorTex, 1)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, material.baseColorTexture)
+    } else {
+      gl.uniform1i(uniforms.hasBaseColorTex, 0)
+    }
+
+    if (material.metallicRoughnessTexture) {
+      gl.uniform1i(uniforms.hasMrTex, 1)
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_2D, material.metallicRoughnessTexture)
+    } else {
+      gl.uniform1i(uniforms.hasMrTex, 0)
+    }
+
+    if (material.emissiveTexture) {
+      gl.uniform1i(uniforms.hasEmissiveTex, 1)
+      gl.activeTexture(gl.TEXTURE2)
+      gl.bindTexture(gl.TEXTURE_2D, material.emissiveTexture)
+    } else {
+      gl.uniform1i(uniforms.hasEmissiveTex, 0)
+    }
+
+    if (fogActive) gl.uniform3fv(uniforms.fogColor, material.additive ? BLACK : fogColor)
+  }
+
+  /** Dibuja una primitiva; en la pasada translúcida las de doble cara van «cara trasera → cara delantera». */
+  function drawItem(item, isBlendPass) {
+    if (item.nodeIdx !== boundNodeIdx) bindNode(item)
+    if (item.material !== boundMaterial) bindMaterial(item.material)
+
+    const { prim, material } = item
+    gl.bindVertexArray(prim.vao)
+    if (!material.doubleSided) {
+      gl.drawElements(gl.TRIANGLES, prim.count, prim.indexType, prim.indexOffset)
+    } else if (isBlendPass) {
+      gl.cullFace(gl.FRONT)
+      gl.drawElements(gl.TRIANGLES, prim.count, prim.indexType, prim.indexOffset)
+      gl.cullFace(gl.BACK)
+      gl.drawElements(gl.TRIANGLES, prim.count, prim.indexType, prim.indexOffset)
+    } else {
+      gl.disable(gl.CULL_FACE)
+      gl.drawElements(gl.TRIANGLES, prim.count, prim.indexType, prim.indexOffset)
+      gl.enable(gl.CULL_FACE)
+    }
+  }
+
+  const farthestFirst = (a, b) => b.distSq - a.distSq
+
+  /**
+   * Segunda pasada: materiales translúcidos de atrás hacia delante (distancia del centro de su caja
+   * al ojo), con mezcla premultiplicada y sin escribir profundidad. Restaura el estado GL al acabar.
+   */
+  function drawBlendPass(eye) {
+    for (const item of blendItems) {
+      mat4TransformPoint(centerWorld, baseNodes[item.nodeIdx].worldMat, item.prim.center)
+      const dx = centerWorld[0] - eye[0]
+      const dy = centerWorld[1] - eye[1]
+      const dz = centerWorld[2] - eye[2]
+      item.distSq = dx * dx + dy * dy + dz * dz
+    }
+    blendItems.sort(farthestFirst)
+
+    gl.enable(gl.BLEND)
+    gl.depthMask(false)
+    let additiveMode = null
+    try {
+      for (const item of blendItems) {
+        if (item.material.additive !== additiveMode) {
+          additiveMode = item.material.additive
+          // La salida del shader ya está premultiplicada: ONE / ONE_MINUS_SRC_ALPHA; el aditivo suma
+          gl.blendFunc(gl.ONE, additiveMode ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA)
+        }
+        drawItem(item, true)
+      }
+    } finally {
+      gl.disable(gl.BLEND)
+      gl.depthMask(true)
+      gl.cullFace(gl.BACK)
+    }
+  }
+
   /**
    * Dibuja un fotograma. `cssWidth`/`cssHeight` permiten al llamador pasar el tamaño ya medido
    * (p. ej. con ResizeObserver) y evitar leer el layout en cada fotograma.
+   *
+   * `camera` (opcional) sustituye a la del preset: `{ eye: [x,y,z], target: [x,y,z], fovDeg, near?, far?, up? }`.
+   * `fog` (opcional): `{ color: [r,g,b] (sRGB 0‥1), near, far }`, niebla lineal por distancia al ojo.
    */
-  function renderFrame({ timeSec = 0, rx = 0, ry = 0, dpr = 1, cssWidth, cssHeight }) {
+  function renderFrame({ timeSec = 0, rx = 0, ry = 0, dpr = 1, cssWidth, cssHeight, camera, fog }) {
     if (disposed || !pollReady()) return
 
     const cssW = cssWidth || canvas.clientWidth || 480
@@ -642,19 +864,33 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     }
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+    viewCssW = cssW
+    viewCssH = cssH
+    hasRendered = true
+
     const aspect = targetW / targetH
-    mat4Perspective(projMat, (cameraConfig.fovDeg * Math.PI) / 180, aspect, 0.04, 24.0)
-    mat4LookAt(viewMat, cameraConfig.eye, cameraConfig.target, upVec)
+    const eye = camera?.eye ?? cameraConfig.eye
+    const fovDeg = camera?.fovDeg ?? cameraConfig.fovDeg
+    mat4Perspective(
+      projMat,
+      (fovDeg * Math.PI) / 180,
+      aspect,
+      camera?.near ?? cameraConfig.near,
+      camera?.far ?? cameraConfig.far,
+    )
+    mat4LookAt(viewMat, eye, camera?.target ?? cameraConfig.target, camera?.up ?? upVec)
     mat4Multiply(viewProjMat, projMat, viewMat)
 
-    // Orientación global de estudio + respuesta controlada al cursor/sensores
-    const yaw = cameraConfig.baseYaw + rx * (preset === 'quest3' ? 0.22 : 0.14)
-    const pitch = cameraConfig.basePitch - ry * (preset === 'quest3' ? 0.14 : 0.08)
-    quatFromEulerXYZ(tmpQuat, pitch, yaw, 0)
-    tmpPos[0] = 0
-    tmpPos[1] = 0
-    tmpPos[2] = 0
-    mat4FromTRS(sceneRootMat, tmpPos, tmpQuat, unitScale)
+    if (!isScene) {
+      // Orientación global de estudio + respuesta controlada al cursor/sensores
+      const yaw = cameraConfig.baseYaw + rx * (preset === 'quest3' ? 0.22 : 0.14)
+      const pitch = cameraConfig.basePitch - ry * (preset === 'quest3' ? 0.14 : 0.08)
+      quatFromEulerXYZ(tmpQuat, pitch, yaw, 0)
+      tmpPos[0] = 0
+      tmpPos[1] = 0
+      tmpPos[2] = 0
+      mat4FromTRS(sceneRootMat, tmpPos, tmpQuat, unitScale)
+    }
 
     applyPoseAnimations(timeSec, rx, ry)
 
@@ -675,69 +911,87 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
     }
 
     gl.uniformMatrix4fv(uniforms.viewProj, false, viewProjMat)
-    gl.uniform3fv(uniforms.camPos, cameraConfig.eye)
+    gl.uniform3fv(uniforms.camPos, eye)
 
-    const identityModel = mat4Identity(tmpMat)
-
-    for (let nIdx = 0; nIdx < nodeCount; nIdx++) {
-      const node = baseNodes[nIdx]
-      if (node.mesh === undefined) continue
-
-      const hasSkin = node.skin !== undefined && compiledSkins[node.skin] !== undefined
-      gl.uniform1i(uniforms.hasSkin, hasSkin ? 1 : 0)
-
-      if (hasSkin) {
-        // En glTF 2.0, las jointMatrices ya incorporan la transformación mundial del esqueleto
-        gl.uniformMatrix4fv(uniforms.model, false, mat4Copy(identityModel, mat4Identity(identityModel)))
-        gl.uniformMatrix4fv(uniforms.joints, false, compiledSkins[node.skin].uniformArray)
-      } else {
-        gl.uniformMatrix4fv(uniforms.model, false, node.worldMat)
-      }
-
-      const prims = compiledMeshes[node.mesh]
-      for (let p = 0; p < prims.length; p++) {
-        const prim = prims[p]
-        const material = compiledMaterials[prim.materialIdx] ?? fallbackMaterial
-
-        const bcf = material.baseColorFactor
-        gl.uniform4f(uniforms.baseColorFactor, bcf[0], bcf[1], bcf[2], bcf[3])
-        gl.uniform1f(uniforms.metallicFactor, material.metallicFactor)
-        gl.uniform1f(uniforms.roughnessFactor, material.roughnessFactor)
-
-        const emf = material.emissiveFactor
-        gl.uniform3f(uniforms.emissiveFactor, emf[0], emf[1], emf[2])
-        gl.uniform1f(uniforms.occlusionStrength, material.occlusionStrength)
-
-        if (material.baseColorTexture) {
-          gl.uniform1i(uniforms.hasBaseColorTex, 1)
-          gl.activeTexture(gl.TEXTURE0)
-          gl.bindTexture(gl.TEXTURE_2D, material.baseColorTexture)
-        } else {
-          gl.uniform1i(uniforms.hasBaseColorTex, 0)
-        }
-
-        if (material.metallicRoughnessTexture) {
-          gl.uniform1i(uniforms.hasMrTex, 1)
-          gl.activeTexture(gl.TEXTURE1)
-          gl.bindTexture(gl.TEXTURE_2D, material.metallicRoughnessTexture)
-        } else {
-          gl.uniform1i(uniforms.hasMrTex, 0)
-        }
-
-        if (material.emissiveTexture) {
-          gl.uniform1i(uniforms.hasEmissiveTex, 1)
-          gl.activeTexture(gl.TEXTURE2)
-          gl.bindTexture(gl.TEXTURE_2D, material.emissiveTexture)
-        } else {
-          gl.uniform1i(uniforms.hasEmissiveTex, 0)
-        }
-
-        gl.bindVertexArray(prim.vao)
-        gl.drawElements(gl.TRIANGLES, prim.count, prim.indexType, prim.indexOffset)
-      }
+    fogActive = Boolean(fog)
+    if (fogActive) {
+      fogColor = fog.color
+      gl.uniform3fv(uniforms.fogColor, fogColor)
+      gl.uniform2f(uniforms.fogRange, fog.near, fog.far)
+    }
+    if (fogActive !== fogUniformOn) {
+      fogUniformOn = fogActive
+      gl.uniform1i(uniforms.fogOn, fogActive ? 1 : 0)
     }
 
+    boundNodeIdx = -1
+    boundMaterial = null
+    for (let i = 0; i < opaqueItems.length; i++) drawItem(opaqueItems[i], false)
+    if (blendItems.length > 0) drawBlendPass(eye)
+
     gl.bindVertexArray(null)
+  }
+
+  /**
+   * Sustituye el TRS base de un nodo (por nombre o índice) desde el siguiente fotograma. Las poses
+   * por nombre se aplican sobre este TRS. Devuelve false si el nodo no existe (no lanza: se llama
+   * dentro del bucle de animación).
+   * @param {string | number} nameOrIndex
+   * @param {{ translation?: number[], rotation?: number[], scale?: number | number[] }} transform
+   */
+  function setNodeTransform(nameOrIndex, { translation, rotation, scale } = {}) {
+    const index = typeof nameOrIndex === 'number' ? nameOrIndex : nodeIdxByName.get(nameOrIndex)
+    const node = baseNodes[index]
+    if (!node) return false
+    if (translation) node.baseT.set(translation)
+    if (rotation) quatNormalize(node.baseR, rotation)
+    if (scale !== undefined) {
+      if (typeof scale === 'number') node.baseS.fill(scale)
+      else node.baseS.set(scale)
+    }
+    return true
+  }
+
+  /**
+   * Aplica varias transformaciones a la vez: `Map` o objeto `{ nombreDeNodo: transform }` (con un
+   * `Map` las claves pueden ser también índices). Devuelve cuántos nodos se actualizaron.
+   */
+  function setNodeTransforms(transforms) {
+    let applied = 0
+    const entries = transforms instanceof Map ? transforms : Object.entries(transforms)
+    for (const [key, transform] of entries) {
+      if (setNodeTransform(key, transform)) applied++
+    }
+    return applied
+  }
+
+  /**
+   * Proyecta un punto del mundo con la matriz vista-proyección del último `renderFrame`.
+   * `x`/`y` en píxeles CSS relativos al canvas (origen arriba a la izquierda); `depth` es la
+   * distancia del punto al plano de la cámara en unidades de mundo (útil para escalar etiquetas);
+   * `visible` indica que cae dentro del frustum. Pasa `out` para no crear un objeto por llamada.
+   */
+  function project(point, out = { x: 0, y: 0, depth: 0, visible: false }) {
+    const m = viewProjMat
+    const [px, py, pz] = point
+    const clipX = m[0] * px + m[4] * py + m[8] * pz + m[12]
+    const clipY = m[1] * px + m[5] * py + m[9] * pz + m[13]
+    const clipZ = m[2] * px + m[6] * py + m[10] * pz + m[14]
+    const clipW = m[3] * px + m[7] * py + m[11] * pz + m[15]
+    if (!hasRendered || clipW <= 0) {
+      out.x = 0
+      out.y = 0
+      out.depth = clipW
+      out.visible = false
+      return out
+    }
+    const ndcX = clipX / clipW
+    const ndcY = clipY / clipW
+    out.x = (ndcX * 0.5 + 0.5) * viewCssW
+    out.y = (0.5 - ndcY * 0.5) * viewCssH
+    out.depth = clipW
+    out.visible = Math.abs(ndcX) <= 1 && Math.abs(ndcY) <= 1 && Math.abs(clipZ) <= clipW
+    return out
   }
 
   /**
@@ -767,6 +1021,9 @@ export function createWebGLPbrStage(canvas, asset, options = {}) {
   return {
     pollReady,
     renderFrame,
+    setNodeTransform,
+    setNodeTransforms,
+    project,
     dispose,
   }
 }

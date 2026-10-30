@@ -33,8 +33,10 @@ export function nextGraphicsLevel(level) {
 
 const DEFAULT_QUALITY = {
   level: 'full',
+  reason: 'default',
   settings: GRAPHICS_LEVELS.full,
   reportFailure: () => {},
+  markSceneChange: () => {},
 }
 
 export const GraphicsQualityContext = createContext(DEFAULT_QUALITY)

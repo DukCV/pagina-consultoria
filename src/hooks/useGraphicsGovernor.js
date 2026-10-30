@@ -64,7 +64,7 @@ function resolveInitialState(capabilities, override) {
  *  3. Pasa directamente a 2D ante un fallo de inicialización del motor gráfico.
  * Con prefers-reduced-motion siempre se usa el nivel `static`.
  */
-export function useGraphicsGovernor({ prefersReducedMotion, isReady, transitionId }) {
+export function useGraphicsGovernor({ prefersReducedMotion, isReady }) {
   const [capabilities] = useState(detectGraphicsCapabilities)
   const [override] = useState(readQualityOverride)
   const [state, setState] = useState(() => resolveInitialState(capabilities, override))
@@ -126,10 +126,11 @@ export function useGraphicsGovernor({ prefersReducedMotion, isReady, transitionI
     }
   }, [isLocked, isReady, level, lowerQuality])
 
-  // Cada cambio de diapositiva monta una escena nueva: se ignora ese tirón antes de volver a medir
-  useEffect(() => {
+  // Montar una escena pesada (cambio de diapositiva, aparición de una sección) provoca un tirón puntual
+  // que no debe contar como lentitud sostenida: se descarta antes de volver a medir
+  const markSceneChange = useCallback(() => {
     monitorRef.current?.reset(performance.now(), WARMUP_AFTER_TRANSITION_MS)
-  }, [transitionId])
+  }, [])
 
   // Al pasar a 2D los modelos decodificados dejan de ser necesarios
   useEffect(() => {
@@ -143,7 +144,8 @@ export function useGraphicsGovernor({ prefersReducedMotion, isReady, transitionI
       settings: GRAPHICS_LEVELS[level],
       capabilities,
       reportFailure,
+      markSceneChange,
     }),
-    [level, reason, capabilities, reportFailure],
+    [level, reason, capabilities, reportFailure, markSceneChange],
   )
 }

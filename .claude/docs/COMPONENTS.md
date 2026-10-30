@@ -18,16 +18,30 @@ Rutas relativas a `src/`. Si añades o renombras algo reutilizable, actualiza es
 | `components/hero/scenes/*Scene.jsx` | 6 escenas (CustomSystems, ImmersiveXr, AiAutomation, Infrastructure, BusinessWeb, Maintenance) | sin props; `aria-hidden`; planos `ov-plane-*` |
 | `components/hero/scenes/maintenance/` | Piezas isométricas de la escena 06 | `IsoCube {x,y,half,height,tone,isDashed}` con tonos `legacy|stable|upgraded|incoming`; `ExplodedPlatform` (sin props); `GlassSlab`, `GearMechanism`, `InterfaceLayer`, `ModuleGridLayer`, `SatelliteModules`, `StageFloor`, `UpdateStatusCard`, `EvolutionCard`; geometría en `isoGeometry.js`; colores `sceneColors.js` |
 
+## Sección de Servicios (`components/services/`)
+| Ruta | Función |
+|---|---|
+| `ServicesSection.jsx` | Carcasa de la sección (`id="servicios"`), carga diferida, esqueleto, modo `scroll`/`manual` |
+| `ServicesHelix.jsx` | Une controlador, renderizador, texto, navegación y etiquetas; gestiona swipe y «Saber más» |
+| `ServiceCard.jsx`, `ServicesIntro.jsx`, `HelixNav.jsx`, `HelixLabels.jsx`, `HelixFrames.jsx` | Presentación (DOM) |
+| `frameSequence.js` | Nombres y encadenado de los fotogramas 2D |
+| `helix3d/helixRig.js` | Geometría y movimiento de la hélice (puro, con pruebas) |
+| `helix3d/useHelixController.js` / `useHelixRenderer.js` | Scroll→progreso→fotograma / ciclo de vida WebGL |
+| `helix3d/buildHelixScene.js`, `sceneRuntime.js`, `textures.js`, `objects/*` | Escena 3D: assets, animación por fotograma, texturas y los seis objetos |
+| `ui/CtaButtons.jsx` | `GhostCta`, `PrimaryCta`, `ArrowIcon` (compartidos con el hero) |
+
 ## Hooks (`hooks/`)
-`useHeroSlider` (estado del slider) · `useSpatialParallax` (parallax/swipe/giroscopio por CSS vars) · `useGraphicsGovernor` (nivel de calidad) · `useWebglModelStage` (ciclo de vida del canvas WebGL) · `useReducedMotion` · `useWelcomeToHeaderTransition` (secuencia bienvenida→header). Junto a hero: `components/hero/useScenePreloader.js`.
+`useHeroSlider` (estado del slider) · `useSpatialParallax` (parallax/swipe/giroscopio por CSS vars) · `useGraphicsGovernor` (nivel de calidad) · `useWebglModelStage` (ciclo de vida del canvas WebGL) · `useReducedMotion` · `useWelcomeToHeaderTransition` (secuencia bienvenida→header) · `useIsScrolled` · `useActiveSection` · `useMediaQuery` · `useSettledValue` · `useNearViewport` (cerca de pantalla con liberación diferida). Junto a hero: `components/hero/useScenePreloader.js`.
 
 ## Contexto, datos y utilidades
 - `context/graphicsQuality.js`: `GRAPHICS_LEVELS`, `GRAPHICS_LEVEL_ORDER`, `GraphicsQualityContext`, `SceneActivityContext`, `useGraphicsQuality()`, `useSceneActivity()`, `isGraphicsLevel`, `worseGraphicsLevel`, `nextGraphicsLevel`.
 - `constants/brandTheme.js`: `OVERLAYER_PALETTE`, `NAVIGATION_ITEMS` (`#servicios`, `#sectores`, `#nosotros`, `#contactanos`), `TRANSITION_TIMINGS`.
 - `constants/heroServicesData.js`: `HERO_SERVICES` (id, `indexLabel`, título, `sceneKey`, `stageGlow`), `HERO_ACTIONS`, `HERO_SLIDER_CONFIG`, `HERO_PROTAGONIST_STATEMENT`.
 - `constants/modelAssets.js`: `MODEL_ASSETS` (`quest3`, `aiCharacter`: `glbUrl`, `preset`, `poster`); sube `MODELS_ASSET_VERSION` al regenerar archivos.
-- `engine3d/`: `createWebGLPbrStage`, `loadGlbAsset/prefetchGlbAsset/isGlbAssetReady/hasRecentGlbFailure/clearGlbCache`, `createFramePerformanceMonitor`, `detectGraphicsCapabilities/evaluateCapabilities`, `math3d` (mat4/quat).
-- `utils/followSectionLink.js`: gestiona enlaces internos aunque la sección no exista aún.
+- `constants/servicesContent.js` (6 servicios: título, descripción, CTA, visual), `servicesIntro.js`, `sectionIds.js` (`SERVICES_SECTION_ID`).
+- `engine3d/`: `createWebGLPbrStage`, `loadGlbAsset/prefetchGlbAsset/isGlbAssetReady/hasRecentGlbFailure/clearGlbCache`, `createFramePerformanceMonitor`, `detectGraphicsCapabilities/evaluateCapabilities`, `math3d` (mat4/quat/vec3), `primitives` (geometrías procedurales), `sceneAsset` (`buildSceneAsset`, `mergeAssets`, `overrideMaterials`).
+- `context/GraphicsQualityProvider.jsx`: nivel de calidad único para toda la página.
+- `utils/followSectionLink.js`: gestiona enlaces internos aunque la sección no exista aún. `utils/serviceFocus.js`: «Saber más» del hero → servicio de la hélice.
 - `index.css`: tokens `--ov-*`, `ov-cta*`, `ov-anim-*`, `ov-plane-*`, `ov-scene-*`, bloque de niveles de calidad.
 
 ## Antes de crear algo nuevo

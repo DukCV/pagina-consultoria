@@ -4,7 +4,13 @@ import {
   OVERLAYER_PALETTE,
   TRANSITION_TIMINGS,
 } from '../constants/brandTheme'
+import { useGraphicsQuality } from '../context/graphicsQuality'
+import { useActiveSection } from '../hooks/useActiveSection'
+import { useIsScrolled } from '../hooks/useIsScrolled'
 import OverlayerBrandLogo from './OverlayerBrandLogo'
+
+// Las opciones de navegación que son enlaces apuntan a secciones con su mismo id: se resalta la que se está leyendo
+const SPY_SECTION_IDS = NAVIGATION_ITEMS.filter((item) => item.variant === 'link').map((item) => item.id)
 
 /**
  * Header principal de Overlayer.
@@ -25,6 +31,17 @@ const MainHeader = forwardRef(function MainHeader(
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const headerContainerRef = useRef(null)
   const mobileToggleRef = useRef(null)
+  const isScrolled = useIsScrolled()
+  const { level } = useGraphicsQuality()
+  const visibleSectionId = useActiveSection(SPY_SECTION_IDS)
+  const lastVisibleSectionRef = useRef(null)
+
+  // Al entrar o salir de una sección, la navegación resalta (o deja de resaltar) su opción
+  useEffect(() => {
+    if (lastVisibleSectionRef.current === visibleSectionId) return
+    lastVisibleSectionRef.current = visibleSectionId
+    setActiveId(visibleSectionId)
+  }, [visibleSectionId])
 
   // Sincroniza estado activo inicial si existiera un hash válido en la URL
   useEffect(() => {
@@ -104,9 +121,17 @@ const MainHeader = forwardRef(function MainHeader(
       ref={headerContainerRef}
       inert={!isInteractive || undefined}
       aria-hidden={!isInteractive || undefined}
-      className={`relative z-40 w-full shrink-0 bg-[#DADDD8]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md ${
-        isInteractive ? 'pointer-events-auto' : 'pointer-events-none select-none'
-      }`}
+      data-scrolled={isScrolled ? 'true' : 'false'}
+      className={`sticky top-0 z-40 w-full shrink-0 pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow,backdrop-filter] duration-300 ease-out ${
+        // El cristal esmerilado solo se usa en calidad completa: en el resto se prefiere un fondo casi opaco
+        isScrolled
+          ? level === 'full'
+            ? 'bg-[#DADDD8]/86 shadow-[0_14px_34px_-22px_rgba(16,13,14,0.7)] backdrop-blur-xl'
+            : 'bg-[#DADDD8]/97 shadow-[0_10px_24px_-20px_rgba(16,13,14,0.7)]'
+          : level === 'full'
+            ? 'bg-[#DADDD8]/95 backdrop-blur-md'
+            : 'bg-[#DADDD8]/98'
+      } ${isInteractive ? 'pointer-events-auto' : 'pointer-events-none select-none'}`}
     >
       {/* Línea cromática superior sutil con la identidad tecnológica de Overlayer */}
       <div

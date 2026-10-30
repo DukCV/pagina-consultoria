@@ -12,6 +12,13 @@ Archivo vivo: lo actualiza `/handoff`. Mantenlo breve; si una entrada deja de se
 | GLB optimizados sin Draco/Meshopt | el motor solo entiende glTF 2.0 plano (`tools/optimize-models.mjs`) |
 | Escenas del hero en chunks diferidos con un reintento | solo `custom-systems` en el bundle principal (`sceneRegistry.js`) |
 | `?ov-quality=full|balanced|static|adaptive` | permite pruebas y soporte deterministas |
+| Sección de Servicios con 3D real en el stage propio ampliado (no CSS 3D ni tarjetas proyectadas) | `preserve-3d` produce recortes por BSP en Chrome; el motor ya tenía PBR, GLB y niveles. Se amplió con opciones **opcionales** y se verificó con hashes de renders del hero (idénticos) |
+| Alternativa 2D = fotogramas pre-renderizados de la misma escena (`tools/render-helix-frames.mjs`) | conserva composición y profundidad; también es la vista previa mientras el 3D compila |
+| El 3D solo existe con la sección cerca de pantalla y se libera a los 6 s | libera GPU/contexto y no compite con los modelos del hero (`useNearViewport`) |
+| Un único oyente de scroll por sección (`useHelixController`); `--ov-axis-x` en CSS fija el eje 3D | evita dos sistemas de scroll y deja el diseño responsive en el CSS |
+| `scroll-behavior: smooth` global (solo sin `prefers-reduced-motion`) + `scroll-padding-top: var(--ov-header-h)` | los anclajes y `goToStep` se desplazan suavemente y quedan bajo el header sticky; afecta a todo el sitio, es intencional |
+| Header sticky nativo + `useIsScrolled`; sin Headroom | Headroom oculta el header al bajar y duplicaría el oyente de scroll |
+| Hélice: un cuarto de vuelta por servicio, cámara que baja un paso | el activo queda siempre al frente y los vecinos a ±90°: cada paso es la misma imagen desplazada |
 
 ## Decisiones del entorno de IA (2026-10-30)
 - `CLAUDE.md` en la raíz como índice (<80 líneas); detalle en reglas con `paths` (cargan solo al tocar esos archivos) y docs leídos bajo demanda (sin `@import`: los imports se cargan siempre).
@@ -21,13 +28,12 @@ Archivo vivo: lo actualiza `/handoff`. Mantenlo breve; si una entrada deja de se
 - Skills propias del proyecto; no se copia código de terceros. Descartadas con motivo: `Design` (8 conectores MCP), `Axe Accessibility` (suscripción de pago), plugin `playwright` MCP (duplica `@playwright/test`), `code-review`/`feature-dev` (ya existen `/code-review`, `/simplify`, `/security-review`), `ui-ux-pro-max` (698 archivos/20 MB, scripts Python, impone paletas), `threejs-skills` (el proyecto no usa three.js), `vercel-labs/agent-skills` (sin licencia declarada), `web-quality-skills` y `design-critique` (válidas y con licencia libre, pero se prefirió contenido propio y más breve). Headroom (oculta el header al bajar: contradice un header siempre accesible) y OmniRoute (gateway de proveedores de IA; el proyecto no hace llamadas de IA) no aplican.
 
 ## Pendientes
-- **Sección «Servicios»** bajo el hero (brief: doble hélice 3D con scroll fijado, header sticky, seis servicios con descripción, beneficio y CTA). Se implementó en una sesión anterior y se revirtió; no hay código en el repo. Diseño validado entonces: proyección en JS + canvas 2D (sin `preserve-3d`), modelos reales solo en el protagonista, modo manual con movimiento reducido o alturas < 600 px, panel de texto en móvil.
-- Header no sticky y proveedor de calidad local a `HeroBanner` (ver `ARCHITECTURE.md`).
 - Secciones destino `#sectores`, `#nosotros`, `#contactanos` sin construir.
 - `public/models/` publica ~17 MB de modelos fuente (`oculus-quest-3/`, `Mannequin Character/`) que el runtime no usa (lo dice su README): moverlos a `models-source/`.
-- Residuos vacíos y sin seguimiento de git de una sesión anterior: `src/components/services/`, `src/components/ui/`, `src/components/hero/scenes/infrastructure/` (se pueden borrar).
 - `README.md` raíz mínimo (solo comandos).
+- Sin GPU real en el entorno de pruebas: el rendimiento del 3D se validó solo comparando niveles (SwiftShader) y comprobando la degradación automática `full → balanced → static`. Conviene medir en un equipo real de gama media y baja.
 - **Hallazgos de la primera auditoría (`node e2e/audit.mjs`, build, escritorio, calidad `static`, 2026-10-30; sin corregir por estar fuera de alcance):** sin `meta description`, `canonical`, Open Graph/Twitter, JSON-LD, `robots.txt` ni `sitemap.xml`; axe: 1 regla seria `label-content-name-mismatch` en 6 botones del selector de especialidades (el `aria-label` «01. Título» no contiene el texto visible); LCP ≈ 8,9 s con la bienvenida terminando a ≈ 7,8 s; 39 tareas largas (>50 ms) durante carga y animaciones (WebGL por software, solo comparativo); CLS 0,0002; JS 113 kB, CSS 13 kB transferidos.
 
 ## Registro de cambios
+- 2026-10-30: sección de Servicios (hélice 3D, header sticky, calidad compartida, `serviceFocus`, motor ampliado, fotogramas 2D, pruebas `e2e/services.spec.js`). Verificado: lint, 77 pruebas unitarias, build, E2E escritorio/móvil, axe 0 violaciones en la sección, hero idéntico.
 - 2026-10-30: creada la configuración de IA (`CLAUDE.md`, `.claude/{rules,docs,skills,agents}`, Playwright, `check:ai`). Sin cambios en `src/`.

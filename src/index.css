@@ -14,6 +14,32 @@
     --ov-stone-light: #e5e6e0;
     --ov-obsidian: #10121e;
     --ov-espresso: #483d3b;
+
+    /* Altura total del header (barra + dos filetes de 2 px): la usan el hero, los anclajes y la sección fijada */
+    --ov-header-h: 76px;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --ov-header-h: 82px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --ov-header-h: 86px;
+    }
+  }
+
+  /* Con el header fijo, los destinos de los enlaces internos quedan siempre por debajo de él */
+  html {
+    scroll-padding-top: var(--ov-header-h);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   html,
@@ -555,7 +581,7 @@
 }
 
 /* =========================================================================
-   NIVELES DE CALIDAD GRÁFICA  (atributo data-ov-quality en .ov-hero)
+   NIVELES DE CALIDAD GRÁFICA  (atributo data-ov-quality en el hero, la sección de servicios y el header)
    full: todo activo · balanced: sin efectos costosos · static: plano, sin modelos 3D.
    El nivel lo decide useGraphicsGovernor según las capacidades y el rendimiento medido.
    ========================================================================= */
@@ -589,25 +615,25 @@
   }
 }
 
-.ov-hero[data-ov-quality='static'] .ov-hero-perspective {
+[data-ov-quality='static'] .ov-hero-perspective {
   animation: ov-quality-settle 380ms ease-out both;
 }
 
 /* balanced y static: se eliminan los filtros más caros (desenfoque de fondo y sombras proyectadas) */
-.ov-hero:not([data-ov-quality='full'])
+[data-ov-quality]:not([data-ov-quality='full'])
   :is([class*='backdrop-blur'], [class*='drop-shadow'], .ov-cta--ghost) {
   backdrop-filter: none !important;
   filter: none !important;
 }
 
 /* balanced y static: las animaciones de trazos y engranajes SVG obligan a repintar en cada fotograma */
-.ov-hero:not([data-ov-quality='full'])
+[data-ov-quality]:not([data-ov-quality='full'])
   :is(.ov-anim-flow, .ov-anim-flow-fast, .ov-anim-pulse, .ov-anim-gear-cw, .ov-anim-gear-ccw) {
   animation: none !important;
 }
 
 /* static: sin perspectiva ni capas 3D; las escenas quedan como composiciones planas */
-.ov-hero[data-ov-quality='static']
+[data-ov-quality='static']
   :is(
     .ov-hero-perspective,
     .ov-scene-gimbal,
@@ -623,7 +649,7 @@
   transform-style: flat;
 }
 
-.ov-hero[data-ov-quality='static']
+[data-ov-quality='static']
   :is(
     .ov-scene-gimbal,
     .ov-plane-horizon,
@@ -637,22 +663,22 @@
   will-change: auto;
 }
 
-.ov-hero[data-ov-quality='static'] :is(.ov-scene-enter-next, .ov-scene-enter-prev) {
+[data-ov-quality='static'] :is(.ov-scene-enter-next, .ov-scene-enter-prev) {
   animation: ov-scene-fade-in 320ms ease-out both;
 }
 
-.ov-hero[data-ov-quality='static'] :is(.ov-scene-exit-next, .ov-scene-exit-prev) {
+[data-ov-quality='static'] :is(.ov-scene-exit-next, .ov-scene-exit-prev) {
   animation: ov-scene-fade-out 260ms ease-in both;
 }
 
 /* static: se conservan las flotaciones sobre elementos HTML (baratas) pero no las internas de un SVG */
-.ov-hero[data-ov-quality='static'] svg :is(.ov-anim-float, .ov-anim-float-alt) {
+[data-ov-quality='static'] svg :is(.ov-anim-float, .ov-anim-float-alt) {
   animation: none !important;
 }
 
 /* prefers-reduced-motion: sin ninguna animación ni transformación de profundidad */
-.ov-hero[data-ov-quality-reason='reduced-motion'] *,
-.ov-hero[data-ov-quality-reason='reduced-motion'] *::before,
-.ov-hero[data-ov-quality-reason='reduced-motion'] *::after {
+[data-ov-quality-reason='reduced-motion'] *,
+[data-ov-quality-reason='reduced-motion'] *::before,
+[data-ov-quality-reason='reduced-motion'] *::after {
   animation: none !important;
 }

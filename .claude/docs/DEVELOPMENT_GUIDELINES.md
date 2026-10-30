@@ -23,6 +23,9 @@
 ## Activos 3D
 Original en `models-source/` → `node tools/optimize-models.mjs` (GLB plano glTF 2.0) → `public/models/overlayer-optimized/` → render 2D con `node tools/render-posters.mjs` (requiere `npm run dev`) → registrar en `constants/modelAssets.js` y en la escena (`sceneRegistry` lista los `models` para precarga) → subir `MODELS_ASSET_VERSION`.
 
+## Fotogramas 2D de la hélice
+Si cambia la escena 3D de Servicios, regenera los fotogramas: `npm run dev` y `node tools/render-helix-frames.mjs --url http://localhost:5173` (sin dependencias nuevas; usa el Chrome del sistema). Los nombres y anchos deben coincidir con `components/services/frameSequence.js`.
+
 ## Git
 El repositorio tiene un único commit inicial. **No hagas commits ni pushes salvo que el usuario lo pida.** `dist/` y `node_modules/` están ignorados; `CLAUDE.local.md` y los informes de Playwright también.
 

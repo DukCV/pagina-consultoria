@@ -1,11 +1,10 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   HERO_PROTAGONIST_STATEMENT,
   HERO_SERVICES,
   HERO_SERVICES_TOTAL_LABEL,
 } from '../../constants/heroServicesData'
-import { GraphicsQualityContext } from '../../context/graphicsQuality'
-import { useGraphicsGovernor } from '../../hooks/useGraphicsGovernor'
+import { useGraphicsQuality } from '../../context/graphicsQuality'
 import { useHeroSlider } from '../../hooks/useHeroSlider'
 import { useSpatialParallax } from '../../hooks/useSpatialParallax'
 import HeroSceneViewport from './HeroSceneViewport'
@@ -42,8 +41,14 @@ export default function HeroBanner({
     prefersReducedMotion,
   })
 
-  // Nivel de calidad gráfica (full → balanced → static) según capacidades y rendimiento medido
-  const graphics = useGraphicsGovernor({ prefersReducedMotion, isReady, transitionId })
+  // Nivel de calidad gráfica (full → balanced → static), decidido para toda la página por el proveedor
+  const graphics = useGraphicsQuality()
+  const { markSceneChange } = graphics
+
+  // Cada cambio de diapositiva monta una escena nueva: ese tirón no debe contar como lentitud
+  useEffect(() => {
+    markSceneChange()
+  }, [transitionId, markSceneChange])
 
   const {
     motionSensorState,
@@ -82,7 +87,6 @@ export default function HeroBanner({
     transitionId > 0 && !prefersReducedMotion ? 'ov-specialty-reveal' : ''
 
   return (
-    <GraphicsQualityContext.Provider value={graphics}>
     <section
       aria-roledescription="carrusel"
       aria-label="Especialidades tecnológicas líderes de Overlayer"
@@ -447,6 +451,5 @@ export default function HeroBanner({
         </div>
       </div>
     </section>
-    </GraphicsQualityContext.Provider>
   )
 }

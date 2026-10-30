@@ -1,4 +1,4 @@
-import { NAVIGATION_ITEMS, OVERLAYER_PALETTE } from './brandTheme'
+import { NAVIGATION_ITEMS, OVERLAYER_PALETTE } from './brandTheme.js'
 
 /**
  * Contenido minimalista de alto impacto y parámetros centralizados de animación
@@ -14,6 +14,7 @@ export const HERO_PROTAGONIST_STATEMENT = {
 export const HERO_SERVICES = [
   {
     id: 'sistemas-medida',
+    servicesFocusId: 'sistemas-medida',
     indexLabel: '01',
     title: 'Sistemas a la medida',
     sceneKey: 'custom-systems',
@@ -21,6 +22,7 @@ export const HERO_SERVICES = [
   },
   {
     id: 'realidad-inmersiva',
+    servicesFocusId: 'realidad-virtual-aumentada',
     indexLabel: '02',
     title: 'Realidad virtual y aumentada',
     sceneKey: 'immersive-xr',
@@ -28,6 +30,7 @@ export const HERO_SERVICES = [
   },
   {
     id: 'automatizacion-ia',
+    servicesFocusId: 'automatizaciones-ia',
     indexLabel: '03',
     title: 'Automatizaciones con IA',
     sceneKey: 'ai-automation',
@@ -35,6 +38,7 @@ export const HERO_SERVICES = [
   },
   {
     id: 'infraestructura',
+    servicesFocusId: 'infraestructura-nube',
     indexLabel: '04',
     title: 'Infraestructura',
     sceneKey: 'infrastructure',
@@ -42,6 +46,7 @@ export const HERO_SERVICES = [
   },
   {
     id: 'sistemas-web',
+    servicesFocusId: 'paginas-web',
     indexLabel: '05',
     title: 'Sistemas y páginas web para negocios',
     sceneKey: 'business-web',
@@ -49,6 +54,7 @@ export const HERO_SERVICES = [
   },
   {
     id: 'mantenimiento-mejoras',
+    servicesFocusId: 'mantenimiento-sistemas',
     indexLabel: '06',
     title: 'Mantenimiento y mejoras',
     sceneKey: 'maintenance-upgrades',
@@ -65,6 +71,7 @@ const navigationItem = (id) => NAVIGATION_ITEMS.find((item) => item.id === id)
  * Botones de acción que acompañan a cada especialidad. Apuntan por defecto a las secciones
  * oficiales de la navegación del header (misma fuente de verdad). Para dirigir un servicio a
  * un destino propio basta con añadir `learnMoreHref` y/o `contactHref` a su entrada de HERO_SERVICES.
+ * `servicesFocusId` es el servicio de la sección de Servicios al que «Saber más» lleva la hélice.
  */
 export const HERO_ACTIONS = {
   learnMore: { label: 'Saber más', href: navigationItem('servicios')?.href ?? '#servicios' },

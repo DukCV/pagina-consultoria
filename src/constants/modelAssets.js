@@ -8,7 +8,8 @@
  */
 
 const MODELS_ASSET_VERSION = '2'
-const MODELS_BASE_URL = `${import.meta.env.BASE_URL}models`
+// `import.meta.env` no existe fuera de Vite (p. ej. en las pruebas de Node): se usa la raíz por defecto
+const MODELS_BASE_URL = `${import.meta.env?.BASE_URL ?? '/'}models`
 const POSTER_WIDTHS = [360, 720, 1080]
 
 function createPoster(name, sizes) {
