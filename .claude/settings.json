@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "frontend-design@anthropic-plugin-directory": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(./dist/**)",
+      "Read(./node_modules/**)",
+      "Read(./models-source/**)",
+      "Read(./public/models/**)",
+      "Read(./package-lock.json)"
+    ]
+  }
+}

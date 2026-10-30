@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\"",
+    "test:e2e": "playwright test",
+    "check:ai": "node tools/check-claude-config.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -17,6 +19,8 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
