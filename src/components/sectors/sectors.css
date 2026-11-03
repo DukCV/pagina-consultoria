@@ -49,15 +49,6 @@
   }
 }
 
-.ov-sectors::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, var(--ov-indigo), var(--ov-emerald) 55%, var(--ov-indigo));
-  opacity: 0.8;
-}
-
 .ov-sec-wrap {
   width: min(100%, calc(1312px + var(--ov-gutter) * 2));
   margin-inline: auto;

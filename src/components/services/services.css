@@ -49,17 +49,6 @@
   }
 }
 
-/* Filete de unión con el hero */
-.ov-services::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 3;
-  height: 3px;
-  background: linear-gradient(90deg, var(--ov-indigo), var(--ov-emerald) 55%, var(--ov-indigo));
-  opacity: 0.8;
-}
-
 .ov-svc-track {
   position: relative;
   height: calc(var(--ov-pin-h) + (var(--ov-steps, 6) - 1) * var(--ov-step-h));

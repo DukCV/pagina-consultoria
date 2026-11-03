@@ -682,3 +682,83 @@
 [data-ov-quality-reason='reduced-motion'] *::after {
   animation: none !important;
 }
+
+/* =========================================================================
+   COSTURA ENTRE SECCIONES (.ov-seam)
+   En lugar de un filo duro entre secciones: un degradado que viene del color de la sección anterior
+   (--ov-seam-from), un resplandor esmeralda-índigo que se desvanece hacia los lados y un hilo de luz fino,
+   más intenso en el centro, con un destello lima muy tenue. `.ov-seam-bridge` (opcional) funde además el
+   borde inferior de la sección anterior; en escritorio deja intacta la columna de texto de la izquierda,
+   donde están los controles. `--ov-seam-size` fija la altura del degradado superior (que no debe pisar el
+   encabezado de la sección). Sin animación ni eventos de puntero.
+   ========================================================================= */
+.ov-seam {
+  position: relative;
+}
+
+.ov-seam::before,
+.ov-seam::after,
+.ov-seam-bridge {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.ov-seam::before,
+.ov-seam::after {
+  content: '';
+}
+
+.ov-seam::before {
+  top: 0;
+  height: var(--ov-seam-size, clamp(64px, 8vw, 110px));
+  background:
+    radial-gradient(50% 90% at 50% 0, rgba(65, 157, 120, 0.34), transparent 72%),
+    radial-gradient(70% 80% at 82% 0, rgba(67, 67, 113, 0.5), transparent 74%),
+    linear-gradient(
+      180deg,
+      var(--ov-seam-from, #3b3537) 0%,
+      color-mix(in srgb, var(--ov-seam-from, #3b3537) 50%, transparent) 42%,
+      transparent 100%
+    );
+}
+
+.ov-seam::after {
+  top: 0;
+  height: 2px;
+  inset-inline: 6%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(65, 157, 120, 0.85) 22%,
+    rgba(181, 244, 74, 0.7) 50%,
+    rgba(67, 67, 113, 0.9) 78%,
+    transparent
+  );
+  box-shadow: 0 0 22px 1px rgba(65, 157, 120, 0.35);
+}
+
+.ov-seam-bridge {
+  top: -56px;
+  height: 56px;
+  /* Los mismos resplandores que nacen bajo el hilo de luz, para que el degradado sea simétrico a ambos lados */
+  background:
+    radial-gradient(50% 90% at 50% 100%, rgba(65, 157, 120, 0.34), transparent 72%),
+    radial-gradient(70% 80% at 82% 100%, rgba(67, 67, 113, 0.5), transparent 74%),
+    linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--ov-seam-from, #3b3537) 55%, transparent) 55%,
+      var(--ov-seam-from, #3b3537)
+    );
+}
+
+@media (min-width: 1024px) {
+  .ov-seam-bridge {
+    top: -150px;
+    height: 150px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 34%, #000 52%);
+    mask-image: linear-gradient(90deg, transparent 0, transparent 34%, #000 52%);
+  }
+}

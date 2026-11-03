@@ -46,8 +46,8 @@ export default function ServicesSection({ isReady, prefersReducedMotion }) {
       data-mode={mode}
       data-ov-quality={graphics.level}
       data-ov-quality-reason={graphics.reason}
-      style={{ '--ov-steps': SERVICES.length }}
-      className="ov-services"
+      style={{ '--ov-steps': SERVICES.length, '--ov-seam-from': '#3b3537', '--ov-seam-size': '42px' }}
+      className="ov-services ov-seam"
     >
       {isReady ? (
         <Suspense fallback={<ServicesSkeleton />}>

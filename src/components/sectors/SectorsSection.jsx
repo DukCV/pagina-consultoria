@@ -20,8 +20,10 @@ export default function SectorsSection({ isReady, prefersReducedMotion }) {
       aria-labelledby={SECTORS_TITLE_ID}
       data-ov-quality={graphics.level}
       data-ov-quality-reason={graphics.reason}
-      className="ov-sectors"
+      className="ov-sectors ov-seam"
+      style={{ '--ov-seam-from': '#29262d', '--ov-seam-size': 'clamp(36px, 6vw, 110px)' }}
     >
+      <span aria-hidden="true" className="ov-seam-bridge" />
       <SectorsSlider isReady={isReady} prefersReducedMotion={prefersReducedMotion} />
       <div className="ov-sec-wrap">
         <SectorsClosing />
