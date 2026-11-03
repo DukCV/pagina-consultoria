@@ -1,5 +1,5 @@
-import { OVERLAYER_PALETTE } from '../../../../constants/brandTheme.js'
-import { mat4FromTRS, quatFromEulerXYZ, quatMultiply } from '../../../../engine3d/math3d.js'
+import { OVERLAYER_PALETTE } from '../../constants/brandTheme.js'
+import { mat4FromTRS, quatFromEulerXYZ, quatMultiply } from '../../engine3d/math3d.js'
 
 /**
  * Utilidades compartidas por los objetos 3D de la hélice: colores de la paleta, materiales con

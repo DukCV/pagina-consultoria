@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import HeroBanner from './components/hero/HeroBanner'
 import MainHeader from './components/MainHeader'
 import OverlayerSplash from './components/OverlayerSplash'
+import SectorsSection from './components/sectors/SectorsSection'
 import ServicesSection from './components/services/ServicesSection'
 import GraphicsQualityProvider from './context/GraphicsQualityProvider'
 import { useReducedMotion } from './hooks/useReducedMotion'
@@ -55,6 +56,7 @@ function App() {
             prefersReducedMotion={prefersReducedMotion}
           />
           <ServicesSection isReady={isHeaderRevealed} prefersReducedMotion={prefersReducedMotion} />
+          <SectorsSection isReady={isHeaderRevealed} prefersReducedMotion={prefersReducedMotion} />
         </main>
 
         {phase !== 'complete' && (

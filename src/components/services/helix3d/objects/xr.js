@@ -1,5 +1,5 @@
 import { createBox, createPlane, createTorus } from '../../../../engine3d/primitives.js'
-import { composeQuat, glass, groupNode, light, meshNode, quatX, quatY, solid, sprite } from './common.js'
+import { composeQuat, glass, groupNode, light, meshNode, quatX, quatY, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 5 · Realidad virtual y aumentada: el Meta Quest 3 real (se fusiona aparte, ver `model`) dentro de un

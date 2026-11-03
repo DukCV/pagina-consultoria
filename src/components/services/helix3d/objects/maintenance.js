@@ -1,5 +1,5 @@
 import { createBox, createCylinder, createGear, createPlane, createTorus } from '../../../../engine3d/primitives.js'
-import { composeQuat, groupNode, light, meshNode, quatX, quatY, screen, solid, sprite } from './common.js'
+import { composeQuat, groupNode, light, meshNode, quatX, quatY, screen, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 4 · Mantenimiento y actualización: una plataforma en tres capas separadas (interfaz, módulos y

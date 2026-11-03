@@ -1,4 +1,4 @@
-import { OVERLAYER_PALETTE } from '../../../constants/brandTheme.js'
+import { OVERLAYER_PALETTE } from '../../constants/brandTheme.js'
 
 /**
  * Texturas de interfaz de los objetos 3D, dibujadas con canvas 2D: paneles de control, ventanas web,
@@ -12,7 +12,7 @@ const CHARCOAL_DEEP = '#2b2830'
 const CHARCOAL_SLAB = '#35303a'
 const CHARCOAL_LIGHT = '#4a4347'
 
-function makeCanvas(width, height) {
+export function makeCanvas(width, height) {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height

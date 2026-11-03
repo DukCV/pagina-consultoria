@@ -1,5 +1,5 @@
 import { createBox, createCylinder, createPlane, createSphere, createTube, mergeGeometries } from '../../../../engine3d/primitives.js'
-import { curve, groupNode, light, matrix, meshNode, quatY, screen, solid, sprite } from './common.js'
+import { curve, groupNode, light, matrix, meshNode, quatY, screen, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 2 · Infraestructura y nube: tres racks de servidores sobre una plataforma, una nube sobre ellos y

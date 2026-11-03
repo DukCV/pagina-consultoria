@@ -1,5 +1,5 @@
 import { createBox, createPlane, createSphere } from '../../../../engine3d/primitives.js'
-import { glass, groupNode, meshNode, quatY, screen, solid, sprite } from './common.js'
+import { glass, groupNode, meshNode, quatY, screen, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 1 · Sistemas a la medida: un panel de control flotante con su ventana de datos, módulos de software

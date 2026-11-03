@@ -1,6 +1,6 @@
 import { createCylinder, createSphere, createTube, mergeGeometries } from '../../../../engine3d/primitives.js'
 import { HELIX, SERVICE_COUNT, serviceState, strandPoint } from '../helixRig.js'
-import { curve, groupNode, light, matrix, meshNode, segmentItem, solid } from './common.js'
+import { curve, groupNode, light, matrix, meshNode, segmentItem, solid } from '../../../scene3d/sceneKit.js'
 
 /**
  * Estructura de la doble hélice: dos hilos tubulares, peldaños entre ellos, cuentas en los extremos

@@ -1,5 +1,5 @@
 import { SERVICE_COUNT, cameraFor, helixRotation, serviceState } from './helixRig.js'
-import { quatY } from './objects/common.js'
+import { quatY } from '../../scene3d/sceneKit.js'
 
 /**
  * Animación por fotograma de la escena: coloca la hélice, los servicios y sus anillos según el

@@ -4,14 +4,14 @@ import { createTorus } from '../../../engine3d/primitives.js'
 import { buildSceneAsset, mergeAssets, overrideMaterials } from '../../../engine3d/sceneAsset.js'
 import { SERVICE_COUNT } from './helixRig.js'
 import { buildAi } from './objects/ai.js'
-import { groupNode, meshNode, quatX, rgb, solid } from './objects/common.js'
+import { groupNode, meshNode, quatX, rgb, solid } from '../../scene3d/sceneKit.js'
 import { buildInfrastructure } from './objects/infrastructure.js'
 import { buildMaintenance } from './objects/maintenance.js'
 import { buildStructure } from './objects/structure.js'
 import { buildSystems } from './objects/systems.js'
 import { buildWeb } from './objects/web.js'
 import { buildXr } from './objects/xr.js'
-import * as textures from './textures.js'
+import * as textures from '../../scene3d/panelTextures.js'
 
 /**
  * Ensambla la escena 3D completa: estructura de la hélice, los seis objetos de servicio (cinco con

@@ -1,5 +1,5 @@
 import { createPlane, createSphere, createTorus, createTube } from '../../../../engine3d/primitives.js'
-import { composeQuat, curve, groupNode, light, meshNode, quatX, quatY, quatZ, solid, sprite } from './common.js'
+import { composeQuat, curve, groupNode, light, meshNode, quatX, quatY, quatZ, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 6 · Automatización con inteligencia artificial: el personaje 3D real (se fusiona aparte, ver

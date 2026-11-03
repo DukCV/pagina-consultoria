@@ -1,5 +1,5 @@
 import { createBox, createCylinder, createPlane, createSphere } from '../../../../engine3d/primitives.js'
-import { eulerQuat, glass, groupNode, meshNode, quatY, screen, solid, sprite } from './common.js'
+import { eulerQuat, glass, groupNode, meshNode, quatY, screen, solid, sprite } from '../../../scene3d/sceneKit.js'
 
 /**
  * 3 · Diseño y desarrollo web: un monitor con una página, un teléfono con su versión adaptada y una

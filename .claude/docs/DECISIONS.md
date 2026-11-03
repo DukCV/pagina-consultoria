@@ -14,6 +14,10 @@ Archivo vivo: lo actualiza `/handoff`. Mantenlo breve; si una entrada deja de se
 | `?ov-quality=full|balanced|static|adaptive` | permite pruebas y soporte deterministas |
 | Sección de Servicios con 3D real en el stage propio ampliado (no CSS 3D ni tarjetas proyectadas) | `preserve-3d` produce recortes por BSP en Chrome; el motor ya tenía PBR, GLB y niveles. Se amplió con opciones **opcionales** y se verificó con hashes de renders del hero (idénticos) |
 | Alternativa 2D = fotogramas pre-renderizados de la misma escena (`tools/render-helix-frames.mjs`) | conserva composición y profundidad; también es la vista previa mientras el 3D compila |
+| Sectores = ciudad 3D procedural recorrida por la cámara + slider (no cuadrícula ni tarjetas sobre la maqueta) | el brief pide una experiencia inmersiva con la información arriba y la maqueta como escenario; los entornos se componen con volúmenes fusionados por capa (sin modelos descargados) |
+| La cámara orbita con progreso lineal en ángulo y viaje Hermite con retarget | giro siempre en el mismo sentido, sin saltos al pulsar de nuevo ni mareos; la duración crece poco con los saltos largos |
+| Texto sincronizado por temporizadores con la misma duración que la cámara (no por callbacks del 3D) | el contenido funciona igual con el 3D sin cargar, en `static` o con movimiento reducido |
+| Sombras de contacto simuladas (una malla BLEND fusionada) | el motor no tiene sombras en tiempo real; un draw call y mantiene la profundidad |
 | El 3D solo existe con la sección cerca de pantalla y se libera a los 6 s | libera GPU/contexto y no compite con los modelos del hero (`useNearViewport`) |
 | Un único oyente de scroll por sección (`useHelixController`); `--ov-axis-x` en CSS fija el eje 3D | evita dos sistemas de scroll y deja el diseño responsive en el CSS |
 | `scroll-behavior: smooth` global (solo sin `prefers-reduced-motion`) + `scroll-padding-top: var(--ov-header-h)` | los anclajes y `goToStep` se desplazan suavemente y quedan bajo el header sticky; afecta a todo el sitio, es intencional |
@@ -35,5 +39,6 @@ Archivo vivo: lo actualiza `/handoff`. Mantenlo breve; si una entrada deja de se
 - **Hallazgos de la primera auditoría (`node e2e/audit.mjs`, build, escritorio, calidad `static`, 2026-10-30; sin corregir por estar fuera de alcance):** sin `meta description`, `canonical`, Open Graph/Twitter, JSON-LD, `robots.txt` ni `sitemap.xml`; axe: 1 regla seria `label-content-name-mismatch` en 6 botones del selector de especialidades (el `aria-label` «01. Título» no contiene el texto visible); LCP ≈ 8,9 s con la bienvenida terminando a ≈ 7,8 s; 39 tareas largas (>50 ms) durante carga y animaciones (WebGL por software, solo comparativo); CLS 0,0002; JS 113 kB, CSS 13 kB transferidos.
 
 ## Registro de cambios
+- 2026-11-03: sección de Sectores (ciudad 3D con cámara orbital, slider, `scene3d/` compartido, fotogramas 2D `wide`/`square`, `e2e/sectors.spec.js`). La refactorización de `scene3d/` movió `common.js`→`sceneKit.js`, `textures.js`→`panelTextures.js` y extrajo `useSceneRenderer` de `useHelixRenderer`.
 - 2026-10-30: sección de Servicios (hélice 3D, header sticky, calidad compartida, `serviceFocus`, motor ampliado, fotogramas 2D, pruebas `e2e/services.spec.js`). Verificado: lint, 77 pruebas unitarias, build, E2E escritorio/móvil, axe 0 violaciones en la sección, hero idéntico.
 - 2026-10-30: creada la configuración de IA (`CLAUDE.md`, `.claude/{rules,docs,skills,agents}`, Playwright, `check:ai`). Sin cambios en `src/`.

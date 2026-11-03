@@ -38,10 +38,17 @@
 Pantalla fijada (sticky) bajo el hero con una doble hélice 3D real que gira con el scroll.
 - `ServicesSection` (carcasa + `Suspense` + esqueleto de igual altura; `data-mode`, `data-ov-quality`) → `ServicesHelix` (lazy: texto, navegación, etiquetas).
 - `helix3d/helixRig.js` (puro): hilos, un cuarto de vuelta por servicio, cámara, mesetas (`displayProgress`), scroll↔progreso. `helix3d/useHelixController.js`: **único** oyente de scroll, progreso suavizado en rAF solo mientras algo se mueve.
-- `helix3d/useHelixRenderer.js`: ciclo de vida del stage (`loading-3d` → `ready-3d` | `fallback-2d`), pausa fuera de vista, DPR por nivel con presupuesto de píxeles, `webglcontextlost` → 2D. El 3D solo existe con la sección cerca (`useNearViewport`): se libera a los 6 s de alejarse.
-- `helix3d/buildHelixScene.js` + `objects/*` (estructura, 6 objetos, anillos lima, texturas de canvas) + `sceneRuntime.js` (transformaciones por fotograma, cámara, etiquetas DOM). Quest 3 e IA son los GLB del hero, fusionados.
+- `helix3d/useHelixRenderer.js` (envuelve `scene3d/useSceneRenderer.js`): ciclo de vida del stage (`loading-3d` → `ready-3d` | `fallback-2d`), pausa fuera de vista, DPR por nivel con presupuesto de píxeles, `webglcontextlost` → 2D. El 3D solo existe con la sección cerca (`useNearViewport`): se libera a los 6 s de alejarse.
+- `helix3d/buildHelixScene.js` + `objects/*` (estructura, 6 objetos, anillos lima; utilidades y texturas en `scene3d/`) + `sceneRuntime.js` (transformaciones por fotograma, cámara, etiquetas DOM). Quest 3 e IA son los GLB del hero, fusionados.
 - Alternativa 2D: `HelixFrames` + `frameSequence.js` (fotogramas de la misma escena, `tools/render-helix-frames.mjs`); también sirve de vista previa mientras el 3D carga. La posición del eje 3D la fija el CSS (`--ov-axis-x`).
 - Modo manual (`data-mode="manual"`): movimiento reducido o altura < 600 px; sin sticky ni scroll vinculado.
+
+## Sección de Sectores (`components/sectors/`)
+Slider de cinco diapositivas arriba y, debajo, una ciudad 3D que la cámara recorre en órbita al cambiar de diapositiva.
+- `SectorsSlider` guarda el destino pedido (mueve cámara e indicadores al instante) y el texto visible, que sale al empezar el viaje y entra al 55 % (`SWAP_FRACTION`); sus temporizadores usan la misma `durationFor` que la cámara, así que el texto va sincronizado aunque el 3D no haya cargado. `CityStage` es lazy.
+- `city3d/cityCamera.js` + `cityMotion.js` (puros): ángulo lineal (72° por paso, siempre el mismo sentido), encuadre por parada interpolado con «vuelo» a mitad de tramo; el viaje es una Hermite con tangente final nula que arranca con la velocidad actual (pulsar de nuevo no da saltos). `useCityController`: único rAF, solo corre mientras hay movimiento.
+- `city3d/cityRig.js`: disco de radio 13, plaza con el logotipo, avenida circular, 5 distritos de 72° con 5 lotes (hileras A y B). `district/*.js` pintan cada tipo de lote con `scene3d/brush.js` (fusión por capa de `cityMaterials.js`: la ciudad entera son ≈ 15 mallas) y `logoMonument.js` gira hacia la cámara para que el isotipo se lea desde cada parada.
+- Calidad por capacidades reales: `full` (vehículos, anillos animados, paralaje, reposo a 24 fps), `balanced` (`detail 0`, sin vehículos ni paralaje), `static`/fallo/movimiento reducido → fotogramas WebP de las cinco paradas (`tools/render-city-frames.mjs`, juegos `wide` 1,9:1 y `square` 1:1 según `--ov-sec-aspect`).
 
 ## Estado compartido
 `GraphicsQualityProvider` (en `App`) da el mismo nivel de calidad al header, al hero y a la sección; el header es `sticky` (translúcido al hacer scroll) y `--ov-header-h` (76/82/86 px) fija la altura que respetan anclas y pantalla fijada. «Saber más» del hero enfoca el servicio vía `utils/serviceFocus.js`.
